@@ -182,7 +182,7 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
         if button in card_map:
             button_widgets.append(card_map[button])
 
-    split_index = (len(button_widgets) + 1) // 2
+    split_index = len(button_widgets) if len(button_widgets) <= 4 else (len(button_widgets) + 1) // 2
     first_row = button_widgets[:split_index]
     second_row = button_widgets[split_index:]
 
