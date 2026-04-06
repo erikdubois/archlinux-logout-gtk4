@@ -102,19 +102,20 @@ class TransparentWindow(Gtk.ApplicationWindow):
         self.aux_icon_size = max(32, self.icon // 2)
 
         self._apply_background_css()
-
         self.display_on_monitor()
 
-        GUI.GUI(self, Gtk, GdkPixbuf, fn.working_dir, fn.os, Gdk, fn)
+        # Show the dark background immediately, load icons on next idle cycle
+        self.present()
+        GLib.idle_add(self._build_gui)
 
+    def _build_gui(self):
+        GUI.GUI(self, Gtk, GdkPixbuf, fn.working_dir, fn.os, Gdk, fn)
         self.set_focusable(True)
         self.grab_focus()
-
         if not fn.os.path.isfile("/tmp/archlinux-logout.lock"):
             with open("/tmp/archlinux-logout.lock", "w") as f:
                 f.write("")
-
-        self.present()
+        return False
 
     def _apply_background_css(self):
         css = f"window {{ background-color: rgba(0, 0, 0, {self.opacity}); }}"
