@@ -168,7 +168,7 @@ class Main(Gtk.ApplicationWindow):
                     paths + "/" + image, 320, 180)
                 pimage = Gtk.Picture()
                 pimage.set_name(paths + "/" + image)
-                pimage.set_pixbuf(pb)
+                pimage.set_paintable(Gdk.Texture.new_for_pixbuf(pb))
                 pimage.set_can_shrink(False)
                 pimage.set_content_fit(Gtk.ContentFit.FILL)
                 pimage.set_size_request(320, 180)
@@ -212,6 +212,11 @@ class BetterLockScreenApp(Gtk.Application):
             win = Main(self)
             win.present()
         else:
+            # Create a temporary window as parent so dialogs have a transient parent
+            self._lock_parent = Gtk.Window(application=self)
+            self._lock_parent.set_decorated(False)
+            self._lock_parent.set_default_size(1, 1)
+            self._lock_parent.present()
             dialog = Gtk.AlertDialog(
                 message="Lock File Found",
                 detail=(
@@ -223,12 +228,13 @@ class BetterLockScreenApp(Gtk.Application):
                 default_button=1,
                 cancel_button=0,
             )
-            dialog.choose(None, None, self._on_lock_dialog_response)
+            dialog.choose(self._lock_parent, None, self._on_lock_dialog_response)
 
     def _on_lock_dialog_response(self, dialog, result):
         try:
             button = dialog.choose_finish(result)
         except Exception:
+            self._lock_parent.destroy()
             return
         if button == 1:  # Yes
             pid = ""
@@ -242,11 +248,14 @@ class BetterLockScreenApp(Gtk.Application):
                     message="Application Running!",
                     detail="You first need to close the existing application",
                 )
-                alert.show(None)
+                alert.show(self._lock_parent)
             else:
                 fn.os.unlink("/tmp/archlinux-betterlock.lock")
-                # Re-activate now that lock is cleared
+                self._lock_parent.destroy()
                 self.do_activate()
+        else:
+            self._lock_parent.destroy()
+            self.quit()
 
 
 if __name__ == "__main__":
