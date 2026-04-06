@@ -8,17 +8,17 @@ from Functions import base_dir, os
 def GUI(self, Gtk, GdkPixbuf, Gdk, th, fn):
 
     self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
-    self.add(self.vbox)
+    self.vbox.set_margin_start(10)
+    self.vbox.set_margin_end(10)
+    self.vbox.set_margin_top(10)
+    self.vbox.set_margin_bottom(10)
+    self.set_child(self.vbox)
 
     hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
     hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-
-    #hbox4 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
     hbox5 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-
     hbox6 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
     hbox7 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    
     hbox8 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
     # =======================================================
@@ -31,20 +31,22 @@ def GUI(self, Gtk, GdkPixbuf, Gdk, th, fn):
     self.notification_label = Gtk.Label()
 
     pb_panel = GdkPixbuf.Pixbuf().new_from_file(base_dir + '/images/panel.png')
-    panel = Gtk.Image().new_from_pixbuf(pb_panel)
+    panel = Gtk.Image()
+    panel.set_from_pixbuf(pb_panel)
 
     overlayFrame = Gtk.Overlay()
-    overlayFrame.add(panel)
+    overlayFrame.set_child(panel)
     overlayFrame.add_overlay(self.notification_label)
 
-    self.notification_revealer.add(overlayFrame)
+    self.notification_revealer.set_child(overlayFrame)
 
-    hbox1.pack_start(self.notification_revealer, True, False, 0)
+    hbox1.append(self.notification_revealer)
+    self.notification_revealer.set_hexpand(True)
 
     # ==========================================================
     #                       LOCATIONS
     # ==========================================================
-    lbl = Gtk.Label("Enter Location")
+    lbl = Gtk.Label(label="Enter Location")
     self.loc.set_size_request(280, 0)
     btnbrowse = Gtk.Button(label="...")
     btnsearch = Gtk.Button(label="Load")
@@ -55,124 +57,84 @@ def GUI(self, Gtk, GdkPixbuf, Gdk, th, fn):
     btnbrowse.connect("clicked", self.on_browse_clicked)
 
     btnsearch.set_size_request(130, 0)
-    hbox6.pack_start(lbl, False, False, 10)
-    hbox6.pack_start(self.loc, False, False, 0)
-    hbox6.pack_start(btnbrowse, False, False, 5)
-    hbox6.pack_start(btnsearch, False, False, 0)
-    hbox6.pack_end(btndefault, False, False, 0)
+
+    lbl.set_margin_start(10)
+    lbl.set_margin_end(0)
+    hbox6.append(lbl)
+    hbox6.append(self.loc)
+    btnbrowse.set_margin_start(5)
+    hbox6.append(btnbrowse)
+    hbox6.append(btnsearch)
+
+    btndefault.set_halign(Gtk.Align.END)
+    btndefault.set_hexpand(True)
+    hbox6.append(btndefault)
 
     # ==========================================================
-    #                       LOCATIONS
+    #                       SEARCH
     # ==========================================================
-    lblS = Gtk.Label("Search: ")
+    lblS = Gtk.Label(label="Search: ")
     self.search.set_size_request(180, 0)
     btnsearcher = Gtk.Button(label="Search")
 
     btnsearcher.connect("clicked", self.on_search_clicked)
-    
     btnsearcher.set_size_request(130, 0)
-    hbox8.pack_start(lblS, False, False, 0)
-    hbox8.pack_start(self.search, False, False, 0)
-    hbox8.pack_start(btnsearcher, False, False, 0)    
+
+    hbox8.append(lblS)
+    hbox8.append(self.search)
+    hbox8.append(btnsearcher)
 
     # ==========================================================
-    #                       BUTTON
+    #                       APPLY BUTTON
     # ==========================================================
     self.btnset = Gtk.Button(label="Apply Image")
     self.btnset.connect("clicked", self.on_apply_clicked)
-    hbox2.pack_end(self.btnset, False, False, 0)
+    self.btnset.set_halign(Gtk.Align.END)
+    self.btnset.set_hexpand(True)
+    hbox2.append(self.btnset)
 
     # ==========================================================
-    #                       PATREON
+    #                       CREDITS
     # ==========================================================
-
-    # pE2 = Gtk.EventBox()
-    # pE3 = Gtk.EventBox()
-
-    # pbp2 = GdkPixbuf.Pixbuf().new_from_file_at_size(
-    #     os.path.join(base_dir, 'images/patreon.png'), 28, 28)
-    # pimage2 = Gtk.Image().new_from_pixbuf(pbp2)
-
-    # pbp3 = GdkPixbuf.Pixbuf().new_from_file_at_size(
-    #     os.path.join(base_dir, 'images/paypal.png'), 28, 28)
-    # pimage3 = Gtk.Image().new_from_pixbuf(pbp3)
-
-    # pE2.add(pimage2)
-    # pE3.add(pimage3)
-
-    # pE2.connect("button_press_event", self.on_social_clicked,
-    #             "https://www.patreon.com/hefftor")
-
-    # pE3.connect("button_press_event", self.on_social_clicked,
-    #             "https://streamlabs.com/bradheffernan1")
-
-    # pE2.set_property("has-tooltip", True)
-    # pE3.set_property("has-tooltip", True)
-
-    # pE2.connect("query-tooltip", self.tooltip_callback,
-    #             "Support Brad on Patreon")
-    # pE3.connect("query-tooltip", self.tooltip_callback,
-    #             "Buy Brad a coffee")
-
-    # hbox2.pack_start(pE2, False, False, 0)  # Patreon
-    # hbox2.pack_start(pE3, False, False, 0)  # Patreon
-    credits = Gtk.LinkButton(uri="", label="Credits")
+    credits = Gtk.Button(label="Credits")
     credits.connect("clicked", self.on_support_clicked)
-    hbox2.pack_start(credits, False, False, 0)  # Patreon
+    hbox2.prepend(credits)
 
     # ==========================================================
     #                       STATUS
     # ==========================================================
-
-    hbox5.pack_start(self.status, True, False, 0)
-
-    # ==========================================================
-    #                       RESOLUTION
-    # ==========================================================
-    #self.res = Gtk.ComboBoxText()
-    #for x in fn.resolutions:
-    #    self.res.append_text(x)
-    #self.res.set_active(12)
-    #self.res.set_size_request(100, 0)
-    #label = Gtk.Label("Resolution")
-    #hbox4.pack_start(label, False, False, 0)
-    #hbox4.pack_start(self.res, False, False, 0)
-
-    #hbox2.pack_start(hbox4, True, False, 0)
+    hbox5.append(self.status)
+    self.status.set_hexpand(True)
 
     # ==========================================================
-    #                       RESOLUTION
+    #                       BLUR SLIDER
     # ==========================================================
-    # self.blur = Gtk.Entry()
-    ad1 = Gtk.Adjustment(100, 0, 100, 1, 100, 0)
+    ad1 = Gtk.Adjustment(value=100, lower=0, upper=100,
+                         step_increment=1, page_increment=100, page_size=0)
 
-    self.blur = Gtk.Scale(
-        orientation=Gtk.Orientation.HORIZONTAL, adjustment=ad1)
+    self.blur = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=ad1)
     self.blur.set_digits(0)
     self.blur.set_hexpand(True)
     self.blur.set_draw_value(True)
-    # self.blur.set_has_origin(True)
     self.blur.set_size_request(100, 0)
     self.blur.set_valign(Gtk.Align.START)
 
-    # self.blur.set_text("1.0")
-    # self.blur.set_max_length(4)
-    # self.blur.set_width_chars(True)
-    # self.blur.set_size_request(67, 0)
-    label = Gtk.Label("Blur intensity")
+    label = Gtk.Label(label="Blur intensity")
+    hbox7.append(label)
+    hbox7.append(self.blur)
+    self.blur.set_hexpand(True)
 
-    hbox7.pack_start(label, False, False, 0)
-    hbox7.pack_start(self.blur, False, False, 0)
-
-    hbox2.pack_start(hbox7, True, False, 0)
+    hbox2.prepend(hbox7)
 
     # ==========================================================
     #                       PACK TO WINDOW
     # ==========================================================
 
-    self.vbox.pack_start(hbox1, False, False, 0)  # notify
-    self.vbox.pack_start(hbox6, False, False, 0)  # load row
-    self.vbox.pack_start(hbox8, False, False, 0)  # search row
-    self.vbox.pack_start(self.hbox3, True, True, 0)  # IMAGES
-    self.vbox.pack_start(hbox5, False, False, 0)  # status
-    self.vbox.pack_end(hbox2, False, False, 0)  # Settings row
+    self.vbox.append(hbox1)          # notify
+    self.vbox.append(hbox6)          # load row
+    self.vbox.append(hbox8)          # search row
+    self.vbox.append(self.hbox3)     # images
+    self.hbox3.set_vexpand(True)
+    self.hbox3.set_hexpand(True)
+    self.vbox.append(hbox5)          # status
+    self.vbox.append(hbox2)          # settings row

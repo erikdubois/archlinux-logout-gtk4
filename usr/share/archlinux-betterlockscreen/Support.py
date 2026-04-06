@@ -1,109 +1,122 @@
 import gi
 import Functions
 from Functions import os
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf
+
+gi.require_version('Gtk', '4.0')
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, GdkPixbuf  # noqa
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-class Support(Gtk.Dialog):
+class Support(Gtk.Window):
 
     def __init__(self, parent):
-        Gtk.Dialog.__init__(self, "Credits - Support Development", parent, 0)
-        # self.add_buttons(Gtk.STOCK_OK,Gtk.ResponseType.OK)
-        
-        self.set_size_request(550, 100)
-        # self.set_resizable(False)
+        super().__init__(title="Credits - Support Development")
+        self.set_transient_for(parent)
+        self.set_modal(True)
+        self.set_default_size(550, 100)
+
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        vbox.set_margin_start(10)
+        vbox.set_margin_end(10)
+        vbox.set_margin_top(10)
+        vbox.set_margin_bottom(10)
+        self.set_child(vbox)
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         hbox3 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
-        box = self.get_content_area()
-        box.pack_start(vbox, False, False, 0)
-        
         label = Gtk.Label()
-        label.set_line_wrap(True)
+        label.set_wrap(True)
         label.set_justify(Gtk.Justification.CENTER)
-        label.set_markup("Big thank you to our developers for their work on this project.\n\
-<b>Brad Heffernan</b> is the driving force aka developer behind the Betterlockscreen GUI. \n\
-With the help of <b>Erik Dubois</b> we were able to give our users an easy and efficient tool. \n\
-If you want to thank and support <b>Brad</b> personally for his initiative and efforts then you can do so by following the links.")
+        label.set_markup(
+            "Big thank you to our developers for their work on this project.\n"
+            "<b>Brad Heffernan</b> is the driving force aka developer behind the Betterlockscreen GUI. \n"
+            "With the help of <b>Erik Dubois</b> we were able to give our users an easy and efficient tool. \n"
+            "If you want to thank and support <b>Brad</b> personally for his initiative and efforts "
+            "then you can do so by following the links."
+        )
 
         label2 = Gtk.Label()
         label2.set_markup("Support <b>Brad</b> on patreon")
-        # =====================================================
-        #               PATREON LINK
-        # =====================================================
-        pE = Gtk.EventBox()
-        ppE = Gtk.EventBox()
 
+        # --- Patreon button ---
         pbp = GdkPixbuf.Pixbuf().new_from_file_at_size(
             os.path.join(base_dir, 'images/patreon.png'), 48, 48)
-        pimage = Gtk.Image().new_from_pixbuf(pbp)
+        pimage = Gtk.Image()
+        pimage.set_from_pixbuf(pbp)
 
-        logo = GdkPixbuf.Pixbuf().new_from_file_at_size(
-            os.path.join(base_dir, 'images/archlinux.png'), 100, 100)
-        logo_image = Gtk.Image().new_from_pixbuf(logo)
+        patreon_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        patreon_click = Gtk.GestureClick()
+        patreon_click.connect(
+            "pressed",
+            lambda g, n, x, y: self._open_link("https://www.patreon.com/hefftor")
+        )
+        patreon_box.add_controller(patreon_click)
+        patreon_box.set_tooltip_text("Support BradHeff on Patreon")
+        patreon_box.append(pimage)
 
-        pE.add(pimage)
-
-        pE.connect("button_press_event", self.on_support_click, "https://www.patreon.com/hefftor")
-        pE.set_property("has-tooltip", True)
-
-        pE.connect("query-tooltip", self.tooltip_callback, "Support BradHeff on Patreon")
-
-        
-
+        # --- PayPal button ---
         pbpp = GdkPixbuf.Pixbuf().new_from_file_at_size(
             os.path.join(base_dir, 'images/paypal.png'), 54, 54)
-        ppimage = Gtk.Image().new_from_pixbuf(pbpp)
+        ppimage = Gtk.Image()
+        ppimage.set_from_pixbuf(pbpp)
 
-        ppE.add(ppimage)
+        paypal_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        paypal_click = Gtk.GestureClick()
+        paypal_click.connect(
+            "pressed",
+            lambda g, n, x, y: self._open_link("https://PayPal.Me/heffserver")
+        )
+        paypal_box.add_controller(paypal_click)
+        paypal_box.set_tooltip_text("Buy BradHeff a coffee")
+        paypal_box.append(ppimage)
 
-        ppE.connect("button_press_event", self.on_support_click, "https://PayPal.Me/heffserver")
-        ppE.set_property("has-tooltip", True)
+        # --- Logo ---
+        logo = GdkPixbuf.Pixbuf().new_from_file_at_size(
+            os.path.join(base_dir, 'images/archlinux.png'), 100, 100)
+        logo_image = Gtk.Image()
+        logo_image.set_from_pixbuf(logo)
 
-        ppE.connect("query-tooltip", self.tooltip_callback, "Buy BradHeff a coffee")
+        pE_label = Gtk.Label(label="Patreon")
 
-        pE_label = Gtk.Label("Patreon")
-        
         vbox1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        
-        hbox.pack_start(label, True, True, 10)
+        vbox1.append(patreon_box)
+        vbox1.append(pE_label)
 
-        hbox1.pack_start(label2, False, False, 10)
-        
-        vbox1.pack_start(pE, False, False, 0)
-        vbox1.pack_start(pE_label, False, False, 0)
+        label.set_margin_start(10)
+        label.set_margin_end(10)
+        hbox.append(label)
 
-        hbox2.pack_start(vbox1, False, False, 10)
-        hbox2.pack_start(ppE, False, False, 10)
-        
-        hbox3.pack_start(hbox2, True, False, 0)
+        label2.set_margin_start(10)
+        hbox1.append(label2)
 
-        vbox.pack_start(logo_image, False, False, 10)
-        vbox.pack_start(hbox, False, False, 10)
-        
-        vbox.pack_end(hbox3, False, False, 10)
-        vbox.pack_end(hbox1, False, False, 0)
-        
-        self.show_all()
+        vbox1.set_margin_start(10)
+        hbox2.append(vbox1)
+        paypal_box.set_margin_start(10)
+        hbox2.append(paypal_box)
 
-    def on_support_click(self, widget, event, link):
-        t = Functions.threading.Thread(target=self.weblink, args=(link,))
+        hbox3.set_halign(Gtk.Align.CENTER)
+        hbox3.append(hbox2)
+
+        vbox.append(logo_image)
+        vbox.append(hbox)
+
+        # pack end equivalents — just append in reverse order with END align
+        hbox3.set_valign(Gtk.Align.END)
+        hbox3.set_vexpand(True)
+        vbox.append(hbox1)
+        vbox.append(hbox3)
+
+    def _open_link(self, link):
+        t = Functions.threading.Thread(target=self._weblink, args=(link,))
         t.daemon = True
         t.start()
-        # print("CLICKED")
-        # self.weblink(link)
 
-    def weblink(self, link):
-        Functions.subprocess.call(["bash", "-c", "exo-open --launch webbrowser " + link], shell=False)
-        # webbrowser.open_new_tab(link)
-
-    def tooltip_callback(self, widget, x, y, keyboard_mode, tooltip, text):
-        tooltip.set_text(text)
-        return True
+    def _weblink(self, link):
+        Functions.subprocess.call(
+            ["bash", "-c", "exo-open --launch webbrowser " + link], shell=False
+        )

@@ -1,28 +1,29 @@
 import gi
 from Functions import os
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf, Gdk  # noqa
+
+gi.require_version('Gtk', '4.0')
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, GdkPixbuf  # noqa
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 class splashScreen(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, Gtk.WindowType.POPUP, title='')
+        super().__init__(title='')
         self.set_decorated(False)
         self.set_resizable(False)
-        self.set_size_request(600, 400)
-        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_default_size(600, 400)
 
         main_vbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
-        self.add(main_vbox)
+        self.set_child(main_vbox)
 
         self.image = Gtk.Image()
-        pimage = GdkPixbuf.Pixbuf().new_from_file_at_size(base_dir +
-                                                          "/images/splash.png",
-                                                          600, 400)
+        pimage = GdkPixbuf.Pixbuf().new_from_file_at_size(
+            base_dir + "/images/splash.png", 600, 400
+        )
         self.image.set_from_pixbuf(pimage)
 
-        main_vbox.pack_start(self.image, True, True, 0)
+        main_vbox.append(self.image)
 
-        self.show_all()
+        self.present()

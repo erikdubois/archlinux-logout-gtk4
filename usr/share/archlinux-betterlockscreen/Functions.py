@@ -7,7 +7,8 @@ import threading
 import psutil
 import gi
 from os.path import expanduser
-gi.require_version('Gtk', '3.0')
+
+gi.require_version('Gtk', '4.0')
 from gi.repository import GLib, Gtk  # noqa
 
 
@@ -36,13 +37,6 @@ resolutions = [
     "3440x1440",
     "3840x2160"
 ]
-# ================================================
-#                   GLOBALS
-# ================================================
-
-# ================================================
-#               NOTIFICATIONS
-# ================================================
 
 
 def _get_position(lists, string):
@@ -54,9 +48,7 @@ def _get_position(lists, string):
 def get_saved_path():
     with open(config + settings, "r") as f:
         lines = f.readlines()
-        f.close()
     pos = _get_position(lines, "path=")
-
     return lines[pos].split("=")[1].strip()
 
 
@@ -65,8 +57,9 @@ def show_in_app_notification(self, message):
         GLib.source_remove(self.timeout_id)
         self.timeout_id = None
 
-    self.notification_label.set_markup("<span foreground=\"white\">" +
-                                       message + "</span>")
+    self.notification_label.set_markup(
+        '<span foreground="white">' + message + '</span>'
+    )
     self.notification_revealer.set_reveal_child(True)
     self.timeout_id = GLib.timeout_add(3000, timeOut, self)
 
@@ -81,15 +74,9 @@ def close_in_app_notification(self):
     self.timeout_id = None
 
 
-def MessageBox(self, title, message):
-    md2 = Gtk.MessageDialog(parent=self,
-                            flags=0,
-                            message_type=Gtk.MessageType.INFO,
-                            buttons=Gtk.ButtonsType.OK,
-                            text=title)
-    md2.format_secondary_markup(message)
-    md2.run()
-    md2.destroy()
+def MessageBox(parent, title, message):
+    dialog = Gtk.AlertDialog(message=title, detail=message)
+    dialog.show(parent)
 
 
 def checkIfProcessRunning(processName):
