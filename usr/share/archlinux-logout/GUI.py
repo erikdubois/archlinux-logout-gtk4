@@ -4,8 +4,41 @@
 
 
 def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
+    def apply_icon_widget_size(container, image, size):
+        container.set_size_request(size, size)
+        container.set_halign(Gtk.Align.CENTER)
+        container.set_valign(Gtk.Align.START)
+        container.set_margin_bottom(0)
+        image.set_size_request(size, size)
+        image.set_halign(Gtk.Align.CENTER)
+        image.set_valign(Gtk.Align.START)
+        image.set_can_shrink(False)
+
+    def build_icon_widget(pixbuf):
+        picture = Gtk.Picture()
+        picture.set_content_fit(Gtk.ContentFit.CONTAIN)
+        fn.set_widget_pixbuf(picture, pixbuf)
+        return picture
+
+    def normalize_button_label(label):
+        label.set_halign(Gtk.Align.CENTER)
+        label.set_justify(Gtk.Justification.CENTER)
+        label.set_xalign(0.5)
+        label.set_wrap(False)
+        label.set_single_line_mode(True)
+        label.set_margin_top(-138)
+
+    def normalize_button_card(card):
+        card_width = max(self.main_icon_size + 48, 150)
+        card.set_halign(Gtk.Align.CENTER)
+        card.set_valign(Gtk.Align.START)
+        card.set_size_request(card_width, -1)
+        card.set_margin_top(0)
+        card.set_margin_bottom(0)
+
     mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    mainbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    mainbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
+    topbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
     lblbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
 
     lbl = Gtk.Label(label="")
@@ -17,6 +50,7 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
 
     overlayFrame = Gtk.Overlay()
     overlayFrame.set_child(lblbox)
+    overlayFrame.add_overlay(topbox)
     overlayFrame.add_overlay(mainbox)
 
     self.set_child(overlayFrame)
@@ -42,10 +76,12 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     self.Eset.add_controller(eset_motion)
 
     pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-        os.path.join(working_dir, "configure.svg"), 48, 48
+        os.path.join(working_dir, "configure.svg"),
+        self.aux_icon_size,
+        self.aux_icon_size,
     )
-    self.imageset = Gtk.Image()
-    self.imageset.set_from_pixbuf(pset)
+    self.imageset = build_icon_widget(pset)
+    apply_icon_widget_size(self.Eset, self.imageset, self.aux_icon_size)
     self.Eset.append(self.imageset)
 
     # --- Light/wallpaper button ---
@@ -64,23 +100,24 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     self.Elig.add_controller(elig_motion)
 
     plig = GdkPixbuf.Pixbuf().new_from_file_at_size(
-        os.path.join(working_dir, "light.svg"), 48, 48
+        os.path.join(working_dir, "light.svg"),
+        self.aux_icon_size,
+        self.aux_icon_size,
     )
-    self.imagelig = Gtk.Image()
-    self.imagelig.set_from_pixbuf(plig)
+    self.imagelig = build_icon_widget(plig)
+    apply_icon_widget_size(self.Elig, self.imagelig, self.aux_icon_size)
     self.Elig.append(self.imagelig)
 
     # --- Per-button boxes ---
-    vbox1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox4 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox5 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox6 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    vbox7 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    hbox17 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-
-    hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
+    vbox1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox4 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox5 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox6 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    vbox7 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
+    hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
 
     # --- Shutdown ---
     self.Esh = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -206,65 +243,65 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
         if button == "shutdown":
             psh = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/shutdown.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagesh = Gtk.Image()
-            self.imagesh.set_from_pixbuf(psh)
+            self.imagesh = build_icon_widget(psh)
+            apply_icon_widget_size(self.Esh, self.imagesh, self.main_icon_size)
             self.Esh.append(self.imagesh)
         if button == "cancel":
             pc = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/cancel.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagec = Gtk.Image()
-            self.imagec.set_from_pixbuf(pc)
+            self.imagec = build_icon_widget(pc)
+            apply_icon_widget_size(self.Ec, self.imagec, self.main_icon_size)
             self.Ec.append(self.imagec)
         if button == "restart":
             pr = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/restart.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imager = Gtk.Image()
-            self.imager.set_from_pixbuf(pr)
+            self.imager = build_icon_widget(pr)
+            apply_icon_widget_size(self.Er, self.imager, self.main_icon_size)
             self.Er.append(self.imager)
         if button == "suspend":
             ps = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/suspend.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.images = Gtk.Image()
-            self.images.set_from_pixbuf(ps)
+            self.images = build_icon_widget(ps)
+            apply_icon_widget_size(self.Es, self.images, self.main_icon_size)
             self.Es.append(self.images)
         if button == "lock":
             plk = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/lock.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagelk = Gtk.Image()
-            self.imagelk.set_from_pixbuf(plk)
+            self.imagelk = build_icon_widget(plk)
+            apply_icon_widget_size(self.Elk, self.imagelk, self.main_icon_size)
             self.Elk.append(self.imagelk)
         if button == "logout":
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/logout.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagelo = Gtk.Image()
-            self.imagelo.set_from_pixbuf(plo)
+            self.imagelo = build_icon_widget(plo)
+            apply_icon_widget_size(self.El, self.imagelo, self.main_icon_size)
             self.El.append(self.imagelo)
         if button == "hibernate":
             ph = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/hibernate.svg"),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imageh = Gtk.Image()
-            self.imageh.set_from_pixbuf(ph)
+            self.imageh = build_icon_widget(ph)
+            apply_icon_widget_size(self.Eh, self.imageh, self.main_icon_size)
             self.Eh.append(self.imageh)
 
     # --- Labels ---
@@ -273,42 +310,49 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
         f'<span size="{str(self.font)}000">Shutdown ({self.binds["shutdown"]})</span>'
     )
     self.lbl1.set_name("lbl")
+    normalize_button_label(self.lbl1)
 
     self.lbl2 = Gtk.Label()
     self.lbl2.set_markup(
         f'<span size="{str(self.font)}000">Reboot ({self.binds["restart"]})</span>'
     )
     self.lbl2.set_name("lbl")
+    normalize_button_label(self.lbl2)
 
     self.lbl3 = Gtk.Label()
     self.lbl3.set_markup(
         f'<span size="{str(self.font)}000">Suspend ({self.binds["suspend"]})</span>'
     )
     self.lbl3.set_name("lbl")
+    normalize_button_label(self.lbl3)
 
     self.lbl4 = Gtk.Label()
     self.lbl4.set_markup(
         f'<span size="{str(self.font)}000">Lock ({self.binds["lock"]})</span>'
     )
     self.lbl4.set_name("lbl")
+    normalize_button_label(self.lbl4)
 
     self.lbl5 = Gtk.Label()
     self.lbl5.set_markup(
         f'<span size="{str(self.font)}000">Logout ({self.binds["logout"]})</span>'
     )
     self.lbl5.set_name("lbl")
+    normalize_button_label(self.lbl5)
 
     self.lbl6 = Gtk.Label()
     self.lbl6.set_markup(
         f'<span size="{str(self.font)}000">Cancel ({self.binds["cancel"]})</span>'
     )
     self.lbl6.set_name("lbl")
+    normalize_button_label(self.lbl6)
 
     self.lbl7 = Gtk.Label()
     self.lbl7.set_markup(
         f'<span size="{str(self.font)}000">Hibernate ({self.binds["hibernate"]})</span>'
     )
     self.lbl7.set_name("lbl")
+    normalize_button_label(self.lbl7)
 
     vbox1.append(self.Esh)
     vbox1.append(self.lbl1)
@@ -325,47 +369,55 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     vbox7.append(self.Eh)
     vbox7.append(self.lbl7)
 
+    button_widgets = []
     for button in self.buttons:
         if button == "shutdown":
-            hbox1.append(vbox1)
-            vbox1.set_margin_start(20)
-            vbox1.set_margin_end(20)
+            button_widgets.append(vbox1)
         if button == "cancel":
-            hbox1.append(vbox6)
-            vbox6.set_margin_start(20)
-            vbox6.set_margin_end(20)
+            button_widgets.append(vbox6)
         if button == "restart":
-            hbox1.append(vbox2)
-            vbox2.set_margin_start(20)
-            vbox2.set_margin_end(20)
+            button_widgets.append(vbox2)
         if button == "suspend":
-            hbox1.append(vbox3)
-            vbox3.set_margin_start(20)
-            vbox3.set_margin_end(20)
-        if fn.sessionw != True:
-            if button == "lock":
-                hbox1.append(vbox4)
-                vbox4.set_margin_start(20)
-                vbox4.set_margin_end(20)
+            button_widgets.append(vbox3)
+        if fn.sessionw != True and button == "lock":
+            button_widgets.append(vbox4)
         if button == "logout":
-            hbox1.append(vbox5)
-            vbox5.set_margin_start(20)
-            vbox5.set_margin_end(20)
+            button_widgets.append(vbox5)
         if button == "hibernate":
-            hbox1.append(vbox7)
-            vbox7.set_margin_start(20)
-            vbox7.set_margin_end(20)
+            button_widgets.append(vbox7)
+
+    split_index = (len(button_widgets) + 1) // 2
+    first_row = button_widgets[:split_index]
+    second_row = button_widgets[split_index:]
+
+    for widget in button_widgets:
+        normalize_button_card(widget)
+        widget.set_margin_start(10)
+        widget.set_margin_end(10)
+
+    for widget in first_row:
+        hbox1.append(widget)
+
+    for widget in second_row:
+        hbox2.append(widget)
+
+    hbox1.set_halign(Gtk.Align.CENTER)
+    hbox2.set_halign(Gtk.Align.CENTER)
 
     mainbox2.set_halign(Gtk.Align.CENTER)
     mainbox2.append(hbox1)
-
-    # spacers row (settings + light icons top-left)
-    hbox17.append(self.Elig)
-    hbox17.append(self.Eset)
-    mainbox.append(hbox17)
+    if second_row:
+        mainbox2.append(hbox2)
 
     mainbox.set_valign(Gtk.Align.CENTER)
     mainbox.append(mainbox2)
+
+    topbox.set_halign(Gtk.Align.START)
+    topbox.set_valign(Gtk.Align.START)
+    topbox.set_margin_top(16)
+    topbox.set_margin_start(16)
+    topbox.append(self.Elig)
+    topbox.append(self.Eset)
 
     # --- Settings popover ---
     self.popover = Gtk.Popover()

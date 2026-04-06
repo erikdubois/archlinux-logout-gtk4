@@ -32,6 +32,13 @@ def _get_position(lists, value):
     return position
 
 
+def set_widget_pixbuf(widget, pixbuf):
+    if hasattr(widget, "set_pixbuf"):
+        widget.set_pixbuf(pixbuf)
+    else:
+        widget.set_from_pixbuf(pixbuf)
+
+
 def _get_themes():
     y = [x for x in os.listdir(working_dir + "themes")]
     y.sort()
@@ -146,16 +153,16 @@ def get_config(self, Gdk, Gtk, config):
             )
 
 
-def _get_logout():
+def _detect_desktop():
     desktop = "unknown"
     try:
-        out = subprocess.run(
-            ["sh", "-c", "env | grep DESKTOP_SESSION"],
-            shell=False,
-            stdout=subprocess.PIPE,
+        desktop = (
+            os.environ.get("DESKTOP_SESSION")
+            or os.environ.get("XDG_CURRENT_DESKTOP")
+            or os.environ.get("XDG_SESSION_DESKTOP")
+            or "unknown"
         )
-        desktop = out.stdout.decode().split("=")[1].strip()
-        desktop = desktop.lower()
+        desktop = desktop.split(":")[0].strip().lower()
     except Exception:
         desktop = "unknown"
 
@@ -168,10 +175,32 @@ def _get_logout():
                 shell=False,
                 stdout=subprocess.PIPE,
             )
-            desktop = out.stdout.decode().split("=")[1].strip()
-            desktop = desktop.lower()
+            desktop = out.stdout.decode().split("=")[1].strip().split(":")[0].lower()
         except Exception:
             desktop = "unknown"
+
+    if desktop == "unknown":
+        try:
+            if subprocess.run(
+                ["pgrep", "-x", "ohmychadwm"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            ).returncode == 0:
+                desktop = "ohmychadwm"
+            elif subprocess.run(
+                ["pgrep", "-x", "chadwm"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            ).returncode == 0:
+                desktop = "chadwm"
+        except Exception:
+            pass
+
+    return desktop
+
+
+def _get_logout():
+    desktop = _detect_desktop()
 
     print("Your desktop is " + desktop)
     if desktop in ("herbstluftwm", "/usr/share/xsessions/herbstluftwm"):
@@ -268,65 +297,66 @@ def _get_logout():
 
 def button_active(self, data, GdkPixbuf):
     try:
+        icon_size = getattr(self, "main_icon_size", self.icon)
         if data == self.binds["shutdown"]:
             psh = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(
                     working_dir, "themes/" + self.theme + "/shutdown_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imagesh.set_from_pixbuf(psh)
+            set_widget_pixbuf(self.imagesh, psh)
             self.lbl1.set_markup('<span foreground="white">Shutdown</span>')
         elif data == self.binds["restart"]:
             pr = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/restart_blur.svg"),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imager.set_from_pixbuf(pr)
+            set_widget_pixbuf(self.imager, pr)
             self.lbl2.set_markup('<span foreground="white">Restart</span>')
         elif data == self.binds["suspend"]:
             ps = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/suspend_blur.svg"),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.images.set_from_pixbuf(ps)
+            set_widget_pixbuf(self.images, ps)
             self.lbl3.set_markup('<span foreground="white">Suspend</span>')
         elif data == self.binds["lock"]:
             plk = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/lock_blur.svg"),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imagelk.set_from_pixbuf(plk)
+            set_widget_pixbuf(self.imagelk, plk)
             self.lbl4.set_markup('<span foreground="white">Lock</span>')
         elif data == self.binds["logout"]:
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/logout_blur.svg"),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imagelo.set_from_pixbuf(plo)
+            set_widget_pixbuf(self.imagelo, plo)
             self.lbl5.set_markup('<span foreground="white">Logout</span>')
         elif data == self.binds["cancel"]:
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(working_dir, "themes/" + self.theme + "/cancel_blur.svg"),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imagec.set_from_pixbuf(plo)
+            set_widget_pixbuf(self.imagec, plo)
             self.lbl6.set_markup('<span foreground="white">Cancel</span>')
         elif data == self.binds["hibernate"]:
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 os.path.join(
                     working_dir, "themes/" + self.theme + "/hibernate_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                icon_size,
+                icon_size,
             )
-            self.imageh.set_from_pixbuf(plo)
+            set_widget_pixbuf(self.imageh, plo)
             self.lbl7.set_markup('<span foreground="white">Hibernate</span>')
     except Exception:
         pass

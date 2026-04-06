@@ -61,6 +61,8 @@ class TransparentWindow(Gtk.ApplicationWindow):
     buttons = None
     active = False
     opacity = 0.8
+    main_icon_size = 96
+    aux_icon_size = 80
 
     def __init__(self, app):
         super().__init__(application=app, title="ArchLinux Logout")
@@ -69,12 +71,11 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
         self.connect("close-request", self.on_close)
 
-        # Key controller (replaces key-press-event)
         key_controller = Gtk.EventControllerKey()
+        key_controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         key_controller.connect("key-pressed", self.on_keypress)
         self.add_controller(key_controller)
 
-        # Fullscreen state tracking (replaces window-state-event)
         self.connect("notify::fullscreened", self.on_window_state_changed)
         self.__is_fullscreen = False
 
@@ -97,12 +98,17 @@ class TransparentWindow(Gtk.ApplicationWindow):
         if self.buttons is None or self.buttons == [""]:
             self.buttons = self.d_buttons
 
-        # Apply semi-transparent background via CSS (replaces cairo draw + set_app_paintable)
+        self.main_icon_size = self.icon
+        self.aux_icon_size = 80
+
         self._apply_background_css()
 
         self.display_on_monitor()
 
         GUI.GUI(self, Gtk, GdkPixbuf, fn.working_dir, fn.os, Gdk, fn)
+
+        self.set_focusable(True)
+        self.grab_focus()
 
         if not fn.os.path.isfile("/tmp/archlinux-logout.lock"):
             with open("/tmp/archlinux-logout.lock", "w") as f:
@@ -120,9 +126,25 @@ class TransparentWindow(Gtk.ApplicationWindow):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
         )
 
+    def _cleanup_runtime_files(self):
+        for path in ("/tmp/archlinux-logout.lock", "/tmp/archlinux-logout.pid"):
+            try:
+                fn.os.unlink(path)
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
+
+    def _set_scaled_icon_sizes(self, geometry):
+        monitor_min = min(geometry.width, geometry.height)
+        scaled_main = int(round(monitor_min * 0.044))
+        scaled_aux = int(round(monitor_min * 0.03))
+        self.main_icon_size = max(48, min(160, scaled_main))
+        self.aux_icon_size = max(32, min(72, scaled_aux))
+
     def display_on_monitor(self):
         print("#### Archlinux Logout ####")
-        desktop = os.environ.get("DESKTOP_SESSION", "unknown").lower()
+        desktop = fn._detect_desktop()
         print(f"[DEBUG]: Desktop session = {desktop}")
 
         session_type = os.environ.get("XDG_SESSION_TYPE", "").lower()
@@ -136,6 +158,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             print("[DEBUG]: Session type = x11")
             try:
                 import subprocess
+
                 result = subprocess.run(
                     ["xdotool", "getmouselocation", "--shell"],
                     capture_output=True,
@@ -144,8 +167,8 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 )
                 if result.returncode == 0:
                     lines = result.stdout.strip().split("\n")
-                    x_vals = [l.split("=")[1] for l in lines if l.startswith("X=")]
-                    y_vals = [l.split("=")[1] for l in lines if l.startswith("Y=")]
+                    x_vals = [line.split("=")[1] for line in lines if line.startswith("X=")]
+                    y_vals = [line.split("=")[1] for line in lines if line.startswith("Y=")]
                     if x_vals and y_vals:
                         x = int(x_vals[0])
                         y = int(y_vals[0])
@@ -153,6 +176,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                         monitor = self._get_monitor_at_point(x, y)
                         if monitor:
                             geometry = monitor.get_geometry()
+                            self._set_scaled_icon_sizes(geometry)
                             print(
                                 f"[DEBUG]: Monitor: Primary={monitor.is_primary()}, "
                                 f"Dimension={geometry.width}x{geometry.height}"
@@ -182,6 +206,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
         monitor = monitors.get_item(0)
         if monitor:
             geometry = monitor.get_geometry()
+            self._set_scaled_icon_sizes(geometry)
             print("[DEBUG]: Showing on first monitor")
             print(f"[DEBUG]: Dimension: {geometry.width}x{geometry.height}")
             self.set_size_request(geometry.width, geometry.height)
@@ -209,7 +234,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             ) as f:
                 f.writelines(lines)
             self.popover.popdown()
-        except Exception as e:
+        except Exception:
             fn.os.unlink(fn.home + "/.config/archlinux-logout/archlinux-logout.conf")
             if not fn.os.path.isfile(
                 fn.home + "/.config/archlinux-logout/archlinux-logout.conf"
@@ -247,10 +272,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/shutdown_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagesh.set_from_pixbuf(psh)
+            fn.set_widget_pixbuf(self.imagesh, psh)
             self.lbl1.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Shutdown ({data})</span>'
             )
@@ -259,10 +284,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/restart_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imager.set_from_pixbuf(pr)
+            fn.set_widget_pixbuf(self.imager, pr)
             self.lbl2.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Reboot ({data})</span>'
             )
@@ -271,10 +296,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/suspend_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.images.set_from_pixbuf(ps)
+            fn.set_widget_pixbuf(self.images, ps)
             self.lbl3.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Suspend ({data})</span>'
             )
@@ -283,10 +308,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/lock_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagelk.set_from_pixbuf(plk)
+            fn.set_widget_pixbuf(self.imagelk, plk)
             self.lbl4.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Lock ({data})</span>'
             )
@@ -295,10 +320,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/logout_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagelo.set_from_pixbuf(plo)
+            fn.set_widget_pixbuf(self.imagelo, plo)
             self.lbl5.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Logout ({data})</span>'
             )
@@ -307,10 +332,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/cancel_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imagec.set_from_pixbuf(plo)
+            fn.set_widget_pixbuf(self.imagec, plo)
             self.lbl6.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Cancel ({data})</span>'
             )
@@ -319,23 +344,27 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 fn.os.path.join(
                     fn.working_dir, "themes/" + self.theme + "/hibernate_blur.svg"
                 ),
-                self.icon,
-                self.icon,
+                self.main_icon_size,
+                self.main_icon_size,
             )
-            self.imageh.set_from_pixbuf(plo)
+            fn.set_widget_pixbuf(self.imageh, plo)
             self.lbl7.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Hibernate ({data})</span>'
             )
         elif data == self.binds.get("settings"):
             pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                fn.os.path.join(fn.working_dir, "configure_blur.svg"), 48, 48
+                fn.os.path.join(fn.working_dir, "configure_blur.svg"),
+                self.aux_icon_size,
+                self.aux_icon_size,
             )
-            self.imageset.set_from_pixbuf(pset)
+            fn.set_widget_pixbuf(self.imageset, pset)
         elif data == "light":
             pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                fn.os.path.join(fn.working_dir, "light_blur.svg"), 48, 48
+                fn.os.path.join(fn.working_dir, "light_blur.svg"),
+                self.aux_icon_size,
+                self.aux_icon_size,
             )
-            self.imagelig.set_from_pixbuf(pset)
+            fn.set_widget_pixbuf(self.imagelig, pset)
 
     def on_mouse_out(self, widget, data):
         widget.set_cursor(None)
@@ -346,10 +375,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/shutdown.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imagesh.set_from_pixbuf(psh)
+                fn.set_widget_pixbuf(self.imagesh, psh)
                 self.lbl1.set_markup(
                     f'<span size="{str(self.font)}000">Shutdown ({data})</span>'
                 )
@@ -358,10 +387,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/restart.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imager.set_from_pixbuf(pr)
+                fn.set_widget_pixbuf(self.imager, pr)
                 self.lbl2.set_markup(
                     f'<span size="{str(self.font)}000">Reboot ({data})</span>'
                 )
@@ -370,10 +399,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/suspend.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.images.set_from_pixbuf(ps)
+                fn.set_widget_pixbuf(self.images, ps)
                 self.lbl3.set_markup(
                     f'<span size="{str(self.font)}000">Suspend ({data})</span>'
                 )
@@ -382,10 +411,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/lock.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imagelk.set_from_pixbuf(plk)
+                fn.set_widget_pixbuf(self.imagelk, plk)
                 self.lbl4.set_markup(
                     f'<span size="{str(self.font)}000">Lock ({data})</span>'
                 )
@@ -394,10 +423,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/logout.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imagelo.set_from_pixbuf(plo)
+                fn.set_widget_pixbuf(self.imagelo, plo)
                 self.lbl5.set_markup(
                     f'<span size="{str(self.font)}000">Logout ({data})</span>'
                 )
@@ -406,10 +435,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/cancel.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imagec.set_from_pixbuf(plo)
+                fn.set_widget_pixbuf(self.imagec, plo)
                 self.lbl6.set_markup(
                     f'<span size="{str(self.font)}000">Cancel ({data})</span>'
                 )
@@ -418,23 +447,27 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     fn.os.path.join(
                         fn.working_dir, "themes/" + self.theme + "/hibernate.svg"
                     ),
-                    self.icon,
-                    self.icon,
+                    self.main_icon_size,
+                    self.main_icon_size,
                 )
-                self.imageh.set_from_pixbuf(plo)
+                fn.set_widget_pixbuf(self.imageh, plo)
                 self.lbl7.set_markup(
                     f'<span size="{str(self.font)}000">Hibernate ({data})</span>'
                 )
             elif data == self.binds.get("settings"):
                 pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                    fn.os.path.join(fn.working_dir, "configure.svg"), 48, 48
+                    fn.os.path.join(fn.working_dir, "configure.svg"),
+                    self.aux_icon_size,
+                    self.aux_icon_size,
                 )
-                self.imageset.set_from_pixbuf(pset)
+                fn.set_widget_pixbuf(self.imageset, pset)
             elif data == "light":
                 pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                    fn.os.path.join(fn.working_dir, "light.svg"), 48, 48
+                    fn.os.path.join(fn.working_dir, "light.svg"),
+                    self.aux_icon_size,
+                    self.aux_icon_size,
                 )
-                self.imagelig.set_from_pixbuf(pset)
+                fn.set_widget_pixbuf(self.imagelig, pset)
 
     def on_click(self, widget, data):
         self.click_button(widget, data)
@@ -443,6 +476,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
         self.__is_fullscreen = window.is_fullscreen()
 
     def on_keypress(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.click_button(None, self.binds.get("cancel"))
+            return True
+
         self.shortcut_keys = [
             self.binds.get("cancel"),
             self.binds.get("shutdown"),
@@ -457,41 +494,46 @@ class TransparentWindow(Gtk.ApplicationWindow):
         for key in self.shortcut_keys:
             if keyval == Gdk.keyval_to_lower(Gdk.keyval_from_name(key)):
                 self.click_button(None, key)
+                return True
+
+        return False
 
     def click_button(self, widget, data=None):
-        if not data == self.binds.get("settings") and not data == "light":
+        if data != self.binds.get("settings") and data != "light":
             self.active = True
             fn.button_toggled(self, data)
             fn.button_active(self, data, GdkPixbuf)
 
         if data == self.binds.get("logout"):
             command = fn._get_logout()
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            if not command:
+                self.message_box(
+                    "No logout command could be detected for this desktop session.",
+                    "Logout command not found",
+                )
+                self.active = False
+                return
+            self._cleanup_runtime_files()
             self.__exec_cmd(command)
             self.get_application().quit()
 
         elif data == self.binds.get("restart"):
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            self._cleanup_runtime_files()
             self.__exec_cmd(self.cmd_restart)
             self.get_application().quit()
 
         elif data == self.binds.get("shutdown"):
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            self._cleanup_runtime_files()
             self.__exec_cmd(self.cmd_shutdown)
             self.get_application().quit()
 
         elif data == self.binds.get("suspend"):
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            self._cleanup_runtime_files()
             self.__exec_cmd(self.cmd_suspend)
             self.get_application().quit()
 
         elif data == self.binds.get("hibernate"):
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            self._cleanup_runtime_files()
             self.__exec_cmd(self.cmd_hibernate)
             self.get_application().quit()
 
@@ -503,13 +545,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     self.lbl_stat.set_markup(
                         '<span size="x-large"><b>Caching lockscreen images for a faster locking next time</b></span>'
                     )
-                    t = threading.Thread(
-                        target=fn.cache_bl,
-                        args=(
-                            self,
-                            GLib,
-                        ),
-                    )
+                    t = threading.Thread(target=fn.cache_bl, args=(self, GLib))
                     t.daemon = True
                     t.start()
                 else:
@@ -519,7 +555,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     self.Ec.set_sensitive(True)
                     self.active = False
             else:
-                fn.os.unlink("/tmp/archlinux-logout.lock")
+                self._cleanup_runtime_files()
                 self.__exec_cmd(self.cmd_lock)
                 self.get_application().quit()
 
@@ -531,19 +567,14 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.popover2.popup()
 
         else:
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
+            self._cleanup_runtime_files()
             self.get_application().quit()
 
     def __exec_cmd(self, cmdline):
         fn.os.system(cmdline)
 
     def on_close(self, widget):
-        try:
-            fn.os.unlink("/tmp/archlinux-logout.lock")
-            fn.os.unlink("/tmp/archlinux-logout.pid")
-        except Exception:
-            pass
+        self._cleanup_runtime_files()
         self.get_application().quit()
         return False
 
@@ -562,11 +593,11 @@ class ArchLinuxLogoutApp(Gtk.Application):
 
 def signal_handler(sig, frame):
     print("\nArchLinux-Logout is Closing.")
-    try:
-        fn.os.unlink("/tmp/archlinux-logout.lock")
-        fn.os.unlink("/tmp/archlinux-logout.pid")
-    except Exception:
-        pass
+    for path in ("/tmp/archlinux-logout.lock", "/tmp/archlinux-logout.pid"):
+        try:
+            fn.os.unlink(path)
+        except Exception:
+            pass
     app = Gtk.Application.get_default()
     if app:
         app.quit()
