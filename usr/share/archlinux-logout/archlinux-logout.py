@@ -109,13 +109,25 @@ class TransparentWindow(Gtk.ApplicationWindow):
         GLib.idle_add(self._build_gui)
 
     def _build_gui(self):
+        self._pending_pixbufs = []
         GUI.GUI(self, Gtk, GdkPixbuf, fn.working_dir, fn.os, Gdk, fn)
         self.set_focusable(True)
         self.grab_focus()
         if not fn.os.path.isfile("/tmp/archlinux-logout.lock"):
             with open("/tmp/archlinux-logout.lock", "w") as f:
                 f.write("")
+        t = threading.Thread(target=self._load_pixbufs_async, daemon=True)
+        t.start()
         return False
+
+    def _load_pixbufs_async(self):
+        for svg_path, widget, size in self._pending_pixbufs:
+            try:
+                pb = GdkPixbuf.Pixbuf().new_from_file_at_size(svg_path, size, size)
+                texture = Gdk.Texture.new_for_pixbuf(pb)
+                GLib.idle_add(widget.set_paintable, texture)
+            except Exception as e:
+                print(f"[WARN]: Could not load {svg_path}: {e}")
 
     def _apply_background_css(self):
         css = f"window {{ background-color: rgba(0, 0, 0, {self.opacity}); }}"
@@ -145,9 +157,6 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
     def display_on_monitor(self):
         print("#### Archlinux Logout ####")
-        desktop = fn._detect_desktop()
-        print(f"[DEBUG]: Desktop session = {desktop}")
-
         session_type = os.environ.get("XDG_SESSION_TYPE", "").lower()
 
         if session_type == "wayland":
@@ -164,7 +173,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                     ["xdotool", "getmouselocation", "--shell"],
                     capture_output=True,
                     text=True,
-                    timeout=1,
+                    timeout=0.3,
                 )
                 if result.returncode == 0:
                     lines = result.stdout.strip().split("\n")

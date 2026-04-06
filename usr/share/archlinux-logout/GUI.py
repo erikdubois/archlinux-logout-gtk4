@@ -15,11 +15,12 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
         image.set_vexpand(False)
         image.set_hexpand(False)
 
-    def build_icon_widget(pixbuf):
+    def build_icon_widget(svg_path, size):
         picture = Gtk.Picture()
         picture.set_content_fit(Gtk.ContentFit.CONTAIN)
         picture.set_can_shrink(True)
-        fn.set_widget_pixbuf(picture, pixbuf)
+        picture.set_size_request(size, size)
+        self._pending_pixbufs.append((svg_path, picture, size))
         return picture
 
     def normalize_button_label(label):
@@ -77,12 +78,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     )
     self.Eset.add_controller(eset_motion)
 
-    pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
-        os.path.join(working_dir, "configure.svg"),
-        self.aux_icon_size,
-        self.aux_icon_size,
-    )
-    self.imageset = build_icon_widget(pset)
+    self.imageset = build_icon_widget(
+        os.path.join(working_dir, "configure.svg"), self.aux_icon_size)
     apply_icon_widget_size(self.Eset, self.imageset, self.aux_icon_size)
     self.Eset.append(self.imageset)
 
@@ -101,12 +98,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     elig_motion.connect("leave", lambda c: self.on_mouse_out(self.Elig, "light"))
     self.Elig.add_controller(elig_motion)
 
-    plig = GdkPixbuf.Pixbuf().new_from_file_at_size(
-        os.path.join(working_dir, "light.svg"),
-        self.aux_icon_size,
-        self.aux_icon_size,
-    )
-    self.imagelig = build_icon_widget(plig)
+    self.imagelig = build_icon_widget(
+        os.path.join(working_dir, "light.svg"), self.aux_icon_size)
     apply_icon_widget_size(self.Elig, self.imagelig, self.aux_icon_size)
     self.Elig.append(self.imagelig)
 
@@ -151,11 +144,9 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
             continue
         card, img_attr, lbl_attr, lbl_text, svg = button_defs[button]
 
-        pb = GdkPixbuf.Pixbuf().new_from_file_at_size(
+        img = build_icon_widget(
             os.path.join(working_dir, "themes/" + self.theme + f"/{svg}.svg"),
-            self.main_icon_size, self.main_icon_size,
-        )
-        img = build_icon_widget(pb)
+            self.main_icon_size)
         apply_icon_widget_size(card, img, self.main_icon_size)
         setattr(self, img_attr, img)
         card.append(img)

@@ -33,10 +33,9 @@ def _get_position(lists, value):
 
 
 def set_widget_pixbuf(widget, pixbuf):
-    if hasattr(widget, "set_pixbuf"):
-        widget.set_pixbuf(pixbuf)
-    else:
-        widget.set_from_pixbuf(pixbuf)
+    from gi.repository import Gdk
+    texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+    widget.set_paintable(texture)
 
 
 def _get_themes():
