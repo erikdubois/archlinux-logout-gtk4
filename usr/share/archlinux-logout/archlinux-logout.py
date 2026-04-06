@@ -54,7 +54,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
         "cancel": "Escape",
         "settings": "P",
     }
-    theme = "white"
+    theme = "candy"
     hover = "#ffffff"
     icon = 96
     font = 11
