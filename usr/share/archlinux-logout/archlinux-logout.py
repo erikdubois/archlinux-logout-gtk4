@@ -62,7 +62,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
     active = False
     opacity = 0.8
     main_icon_size = 96
-    aux_icon_size = 80
+    aux_icon_size = 48
 
     def __init__(self, app):
         super().__init__(application=app, title="ArchLinux Logout")
@@ -99,7 +99,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.buttons = self.d_buttons
 
         self.main_icon_size = self.icon
-        self.aux_icon_size = 80
+        self.aux_icon_size = max(32, self.icon // 2)
 
         self._apply_background_css()
 
@@ -176,7 +176,6 @@ class TransparentWindow(Gtk.ApplicationWindow):
                         monitor = self._get_monitor_at_point(x, y)
                         if monitor:
                             geometry = monitor.get_geometry()
-                            self._set_scaled_icon_sizes(geometry)
                             print(
                                 f"[DEBUG]: Monitor: Primary={monitor.is_primary()}, "
                                 f"Dimension={geometry.width}x{geometry.height}"
@@ -206,7 +205,6 @@ class TransparentWindow(Gtk.ApplicationWindow):
         monitor = monitors.get_item(0)
         if monitor:
             geometry = monitor.get_geometry()
-            self._set_scaled_icon_sizes(geometry)
             print("[DEBUG]: Showing on first monitor")
             print(f"[DEBUG]: Dimension: {geometry.width}x{geometry.height}")
             self.set_size_request(geometry.width, geometry.height)

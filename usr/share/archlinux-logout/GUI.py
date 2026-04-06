@@ -5,18 +5,20 @@
 
 def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     def apply_icon_widget_size(container, image, size):
-        container.set_size_request(size, size)
         container.set_halign(Gtk.Align.CENTER)
         container.set_valign(Gtk.Align.START)
-        container.set_margin_bottom(0)
+        container.set_vexpand(False)
+        container.set_hexpand(False)
         image.set_size_request(size, size)
         image.set_halign(Gtk.Align.CENTER)
         image.set_valign(Gtk.Align.START)
-        image.set_can_shrink(False)
+        image.set_vexpand(False)
+        image.set_hexpand(False)
 
     def build_icon_widget(pixbuf):
         picture = Gtk.Picture()
         picture.set_content_fit(Gtk.ContentFit.CONTAIN)
+        picture.set_can_shrink(True)
         fn.set_widget_pixbuf(picture, pixbuf)
         return picture
 
@@ -26,7 +28,7 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
         label.set_xalign(0.5)
         label.set_wrap(False)
         label.set_single_line_mode(True)
-        label.set_margin_top(-138)
+        label.set_margin_top(0)
 
     def normalize_button_card(card):
         card_width = max(self.main_icon_size + 48, 150)
@@ -108,283 +110,86 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     apply_icon_widget_size(self.Elig, self.imagelig, self.aux_icon_size)
     self.Elig.append(self.imagelig)
 
-    # --- Per-button boxes ---
-    vbox1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox4 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox5 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox6 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    vbox7 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    # --- Button cards: each card IS the gesture target (no inner wrapper box) ---
+    # self.Esh/Er/etc. point directly to the card so set_sensitive works on the whole card
+
+    def make_card(bind_key):
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        click = Gtk.GestureClick()
+        click.connect("pressed", lambda g, n, x, y: self.on_click(card, bind_key))
+        card.add_controller(click)
+        motion = Gtk.EventControllerMotion()
+        motion.connect("enter", lambda c, x, y: self.on_mouse_in(card, bind_key))
+        motion.connect("leave", lambda c: self.on_mouse_out(card, bind_key))
+        card.add_controller(motion)
+        return card
+
+    self.Esh  = make_card(self.binds["shutdown"])
+    self.Er   = make_card(self.binds["restart"])
+    self.Es   = make_card(self.binds["suspend"])
+    self.Elk  = make_card(self.binds["lock"])
+    self.El   = make_card(self.binds["logout"])
+    self.Ec   = make_card(self.binds["cancel"])
+    self.Eh   = make_card(self.binds["hibernate"])
+
     hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
     hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
 
-    # --- Shutdown ---
-    self.Esh = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    esh_click = Gtk.GestureClick()
-    esh_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Esh, self.binds["shutdown"]),
-    )
-    self.Esh.add_controller(esh_click)
-    esh_motion = Gtk.EventControllerMotion()
-    esh_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Esh, self.binds["shutdown"])
-    )
-    esh_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Esh, self.binds["shutdown"])
-    )
-    self.Esh.add_controller(esh_motion)
+    # Map button names to (card, image_attr, label_attr, label_text, svg_name)
+    button_defs = {
+        "shutdown": (self.Esh,  "imagesh",  "lbl1", f'Shutdown ({self.binds["shutdown"]})', "shutdown"),
+        "restart":  (self.Er,   "imager",   "lbl2", f'Reboot ({self.binds["restart"]})',    "restart"),
+        "suspend":  (self.Es,   "images",   "lbl3", f'Suspend ({self.binds["suspend"]})',   "suspend"),
+        "lock":     (self.Elk,  "imagelk",  "lbl4", f'Lock ({self.binds["lock"]})',         "lock"),
+        "logout":   (self.El,   "imagelo",  "lbl5", f'Logout ({self.binds["logout"]})',     "logout"),
+        "cancel":   (self.Ec,   "imagec",   "lbl6", f'Cancel ({self.binds["cancel"]})',     "cancel"),
+        "hibernate":(self.Eh,   "imageh",   "lbl7", f'Hibernate ({self.binds["hibernate"]})', "hibernate"),
+    }
 
-    # --- Restart ---
-    self.Er = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    er_click = Gtk.GestureClick()
-    er_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Er, self.binds["restart"]),
-    )
-    self.Er.add_controller(er_click)
-    er_motion = Gtk.EventControllerMotion()
-    er_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Er, self.binds["restart"])
-    )
-    er_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Er, self.binds["restart"])
-    )
-    self.Er.add_controller(er_motion)
-
-    # --- Suspend ---
-    self.Es = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    es_click = Gtk.GestureClick()
-    es_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Es, self.binds["suspend"]),
-    )
-    self.Es.add_controller(es_click)
-    es_motion = Gtk.EventControllerMotion()
-    es_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Es, self.binds["suspend"])
-    )
-    es_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Es, self.binds["suspend"])
-    )
-    self.Es.add_controller(es_motion)
-
-    # --- Lock ---
-    self.Elk = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    elk_click = Gtk.GestureClick()
-    elk_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Elk, self.binds["lock"]),
-    )
-    self.Elk.add_controller(elk_click)
-    elk_motion = Gtk.EventControllerMotion()
-    elk_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Elk, self.binds["lock"])
-    )
-    elk_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Elk, self.binds["lock"])
-    )
-    self.Elk.add_controller(elk_motion)
-
-    # --- Logout ---
-    self.El = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    el_click = Gtk.GestureClick()
-    el_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.El, self.binds["logout"]),
-    )
-    self.El.add_controller(el_click)
-    el_motion = Gtk.EventControllerMotion()
-    el_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.El, self.binds["logout"])
-    )
-    el_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.El, self.binds["logout"])
-    )
-    self.El.add_controller(el_motion)
-
-    # --- Cancel ---
-    self.Ec = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    ec_click = Gtk.GestureClick()
-    ec_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Ec, self.binds["cancel"]),
-    )
-    self.Ec.add_controller(ec_click)
-    ec_motion = Gtk.EventControllerMotion()
-    ec_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Ec, self.binds["cancel"])
-    )
-    ec_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Ec, self.binds["cancel"])
-    )
-    self.Ec.add_controller(ec_motion)
-
-    # --- Hibernate ---
-    self.Eh = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-    eh_click = Gtk.GestureClick()
-    eh_click.connect(
-        "pressed",
-        lambda g, n, x, y: self.on_click(self.Eh, self.binds["hibernate"]),
-    )
-    self.Eh.add_controller(eh_click)
-    eh_motion = Gtk.EventControllerMotion()
-    eh_motion.connect(
-        "enter", lambda c, x, y: self.on_mouse_in(self.Eh, self.binds["hibernate"])
-    )
-    eh_motion.connect(
-        "leave", lambda c: self.on_mouse_out(self.Eh, self.binds["hibernate"])
-    )
-    self.Eh.add_controller(eh_motion)
-
-    # --- Load icons per active button ---
     for button in self.buttons:
-        if button == "shutdown":
-            psh = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/shutdown.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imagesh = build_icon_widget(psh)
-            apply_icon_widget_size(self.Esh, self.imagesh, self.main_icon_size)
-            self.Esh.append(self.imagesh)
-        if button == "cancel":
-            pc = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/cancel.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imagec = build_icon_widget(pc)
-            apply_icon_widget_size(self.Ec, self.imagec, self.main_icon_size)
-            self.Ec.append(self.imagec)
-        if button == "restart":
-            pr = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/restart.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imager = build_icon_widget(pr)
-            apply_icon_widget_size(self.Er, self.imager, self.main_icon_size)
-            self.Er.append(self.imager)
-        if button == "suspend":
-            ps = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/suspend.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.images = build_icon_widget(ps)
-            apply_icon_widget_size(self.Es, self.images, self.main_icon_size)
-            self.Es.append(self.images)
-        if button == "lock":
-            plk = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/lock.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imagelk = build_icon_widget(plk)
-            apply_icon_widget_size(self.Elk, self.imagelk, self.main_icon_size)
-            self.Elk.append(self.imagelk)
-        if button == "logout":
-            plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/logout.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imagelo = build_icon_widget(plo)
-            apply_icon_widget_size(self.El, self.imagelo, self.main_icon_size)
-            self.El.append(self.imagelo)
-        if button == "hibernate":
-            ph = GdkPixbuf.Pixbuf().new_from_file_at_size(
-                os.path.join(working_dir, "themes/" + self.theme + "/hibernate.svg"),
-                self.main_icon_size,
-                self.main_icon_size,
-            )
-            self.imageh = build_icon_widget(ph)
-            apply_icon_widget_size(self.Eh, self.imageh, self.main_icon_size)
-            self.Eh.append(self.imageh)
+        if button not in button_defs:
+            continue
+        card, img_attr, lbl_attr, lbl_text, svg = button_defs[button]
 
-    # --- Labels ---
-    self.lbl1 = Gtk.Label()
-    self.lbl1.set_markup(
-        f'<span size="{str(self.font)}000">Shutdown ({self.binds["shutdown"]})</span>'
-    )
-    self.lbl1.set_name("lbl")
-    normalize_button_label(self.lbl1)
+        pb = GdkPixbuf.Pixbuf().new_from_file_at_size(
+            os.path.join(working_dir, "themes/" + self.theme + f"/{svg}.svg"),
+            self.main_icon_size, self.main_icon_size,
+        )
+        img = build_icon_widget(pb)
+        apply_icon_widget_size(card, img, self.main_icon_size)
+        setattr(self, img_attr, img)
+        card.append(img)
 
-    self.lbl2 = Gtk.Label()
-    self.lbl2.set_markup(
-        f'<span size="{str(self.font)}000">Reboot ({self.binds["restart"]})</span>'
-    )
-    self.lbl2.set_name("lbl")
-    normalize_button_label(self.lbl2)
+        lbl = Gtk.Label()
+        lbl.set_markup(f'<span size="{str(self.font)}000">{lbl_text}</span>')
+        lbl.set_name("lbl")
+        normalize_button_label(lbl)
+        setattr(self, lbl_attr, lbl)
+        card.append(lbl)
 
-    self.lbl3 = Gtk.Label()
-    self.lbl3.set_markup(
-        f'<span size="{str(self.font)}000">Suspend ({self.binds["suspend"]})</span>'
-    )
-    self.lbl3.set_name("lbl")
-    normalize_button_label(self.lbl3)
+    # Convenience references for labels used in on_mouse_in/out
+    # (set to empty label if button not shown, to avoid AttributeError)
+    _dummy = Gtk.Label()
+    for attr in ("lbl1","lbl2","lbl3","lbl4","lbl5","lbl6","lbl7"):
+        if not hasattr(self, attr):
+            setattr(self, attr, _dummy)
 
-    self.lbl4 = Gtk.Label()
-    self.lbl4.set_markup(
-        f'<span size="{str(self.font)}000">Lock ({self.binds["lock"]})</span>'
-    )
-    self.lbl4.set_name("lbl")
-    normalize_button_label(self.lbl4)
-
-    self.lbl5 = Gtk.Label()
-    self.lbl5.set_markup(
-        f'<span size="{str(self.font)}000">Logout ({self.binds["logout"]})</span>'
-    )
-    self.lbl5.set_name("lbl")
-    normalize_button_label(self.lbl5)
-
-    self.lbl6 = Gtk.Label()
-    self.lbl6.set_markup(
-        f'<span size="{str(self.font)}000">Cancel ({self.binds["cancel"]})</span>'
-    )
-    self.lbl6.set_name("lbl")
-    normalize_button_label(self.lbl6)
-
-    self.lbl7 = Gtk.Label()
-    self.lbl7.set_markup(
-        f'<span size="{str(self.font)}000">Hibernate ({self.binds["hibernate"]})</span>'
-    )
-    self.lbl7.set_name("lbl")
-    normalize_button_label(self.lbl7)
-
-    vbox1.append(self.Esh)
-    vbox1.append(self.lbl1)
-    vbox2.append(self.Er)
-    vbox2.append(self.lbl2)
-    vbox3.append(self.Es)
-    vbox3.append(self.lbl3)
-    vbox4.append(self.Elk)
-    vbox4.append(self.lbl4)
-    vbox5.append(self.El)
-    vbox5.append(self.lbl5)
-    vbox6.append(self.Ec)
-    vbox6.append(self.lbl6)
-    vbox7.append(self.Eh)
-    vbox7.append(self.lbl7)
+    card_map = {
+        "shutdown": self.Esh,
+        "cancel":   self.Ec,
+        "restart":  self.Er,
+        "suspend":  self.Es,
+        "lock":     self.Elk,
+        "logout":   self.El,
+        "hibernate":self.Eh,
+    }
 
     button_widgets = []
     for button in self.buttons:
-        if button == "shutdown":
-            button_widgets.append(vbox1)
-        if button == "cancel":
-            button_widgets.append(vbox6)
-        if button == "restart":
-            button_widgets.append(vbox2)
-        if button == "suspend":
-            button_widgets.append(vbox3)
-        if fn.sessionw != True and button == "lock":
-            button_widgets.append(vbox4)
-        if button == "logout":
-            button_widgets.append(vbox5)
-        if button == "hibernate":
-            button_widgets.append(vbox7)
+        if button == "lock" and fn.sessionw:
+            continue
+        if button in card_map:
+            button_widgets.append(card_map[button])
 
     split_index = (len(button_widgets) + 1) // 2
     first_row = button_widgets[:split_index]

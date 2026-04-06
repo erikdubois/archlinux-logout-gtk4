@@ -1,4 +1,4 @@
-# ArchLinux logout  GTK-4
+# ArchLinux logout
 
 This app depends on the following packages.
 
