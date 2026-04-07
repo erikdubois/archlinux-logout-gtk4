@@ -149,14 +149,22 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
             self.main_icon_size)
         apply_icon_widget_size(card, img, self.main_icon_size)
         setattr(self, img_attr, img)
-        card.append(img)
 
         lbl = Gtk.Label()
         lbl.set_markup(f'<span size="{str(self.font)}000">{lbl_text}</span>')
         lbl.set_name("lbl")
         normalize_button_label(lbl)
+        lbl.set_valign(Gtk.Align.CENTER)
         setattr(self, lbl_attr, lbl)
-        card.append(lbl)
+        lbl.set_visible(self.show_text)
+
+        icon_overlay = Gtk.Overlay()
+        icon_overlay.set_child(img)
+        icon_overlay.add_overlay(lbl)
+        icon_overlay.set_size_request(self.main_icon_size, self.main_icon_size)
+        icon_overlay.set_halign(Gtk.Align.CENTER)
+        icon_overlay.set_valign(Gtk.Align.START)
+        card.append(icon_overlay)
 
     # Convenience references for labels used in on_mouse_in/out
     # (set to empty label if button not shown, to avoid AttributeError)
@@ -306,6 +314,18 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     hbox_font_size.append(lbl_font_size)
     hbox_font_size.append(self.fonts)
 
+    lbl_show_text = Gtk.Label()
+    lbl_show_text.set_markup("<b>Show text:</b>")
+    lbl_show_text.set_halign(Gtk.Align.START)
+    lbl_show_text.set_valign(Gtk.Align.CENTER)
+
+    self.chk_show_text = Gtk.CheckButton()
+    self.chk_show_text.set_active(self.show_text)
+
+    hbox_show_text = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+    hbox_show_text.append(lbl_show_text)
+    hbox_show_text.append(self.chk_show_text)
+
     hbox_theme = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
     hbox_theme.append(lbl_theme)
     hbox_theme.append(self.themes)
@@ -319,7 +339,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     grid_settings.attach(hbox_opacity, 0, 1, 1, 1)
     grid_settings.attach(hbox_icon_size, 0, 2, 1, 1)
     grid_settings.attach(hbox_font_size, 0, 3, 1, 1)
-    grid_settings.attach(hbox_theme, 0, 4, 1, 1)
+    grid_settings.attach(hbox_show_text, 0, 4, 1, 1)
+    grid_settings.attach(hbox_theme, 0, 5, 1, 1)
     grid_settings.attach(hbox_buttons, 0, 6, 1, 1)
 
     vbox.append(grid_settings)

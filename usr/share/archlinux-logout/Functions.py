@@ -89,6 +89,8 @@ def get_config(self, Gdk, Gtk, config):
                 self.icon = int(self.parser.get("settings", "icon_size"))
             if self.parser.has_option("settings", "font_size"):
                 self.font = int(self.parser.get("settings", "font_size"))
+            if self.parser.has_option("settings", "show_text"):
+                self.show_text = self.parser.getboolean("settings", "show_text")
             if self.parser.has_option("settings", "show_on_monitor"):
                 self.show_on_monitor = self.parser.get("settings", "show_on_monitor")
 

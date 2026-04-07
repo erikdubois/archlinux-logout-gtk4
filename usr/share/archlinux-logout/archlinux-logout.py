@@ -58,6 +58,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
     hover = "#ffffff"
     icon = 96
     font = 11
+    show_text = False
     buttons = None
     active = False
     opacity = 0.8
@@ -130,7 +131,15 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 print(f"[WARN]: Could not load {svg_path}: {e}")
 
     def _apply_background_css(self):
-        css = f"window {{ background-color: rgba(0, 0, 0, {self.opacity}); }}"
+        css = (
+            f"window {{ background-color: rgba(0, 0, 0, {self.opacity}); }}"
+            " label#lbl {"
+            "   color: white;"
+            "   background-color: rgba(0, 0, 0, 0.55);"
+            "   padding: 4px 10px;"
+            "   border-radius: 4px;"
+            " }"
+        )
         provider = Gtk.CssProvider()
         provider.load_from_data(css.encode())
         Gtk.StyleContext.add_provider_for_display(
@@ -220,6 +229,25 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.set_size_request(geometry.width, geometry.height)
             self.fullscreen_on_monitor(monitor)
 
+    def _apply_save_lines(self, lines):
+        pos_opacity = fn._get_position(lines, "opacity")
+        pos_size = fn._get_position(lines, "icon_size")
+        pos_theme = fn._get_position(lines, "theme=")
+        pos_font = fn._get_position(lines, "font_size=")
+        pos_show_text = fn._get_position(lines, "show_text")
+
+        lines[pos_opacity] = "opacity=" + str(int(self.hscale.get_value())) + "\n"
+        lines[pos_size] = "icon_size=" + str(int(self.icons.get_value())) + "\n"
+        lines[pos_theme] = "theme=" + self.themes.get_active_text() + "\n"
+        lines[pos_font] = "font_size=" + str(int(self.fonts.get_value())) + "\n"
+        lines[pos_show_text] = "show_text=" + str(self.chk_show_text.get_active()) + "\n"
+
+        self.show_text = self.chk_show_text.get_active()
+        for attr in ("lbl1", "lbl2", "lbl3", "lbl4", "lbl5", "lbl6", "lbl7"):
+            lbl = getattr(self, attr, None)
+            if lbl:
+                lbl.set_visible(self.show_text)
+
     def on_save_clicked(self, widget):
         try:
             with open(
@@ -227,15 +255,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             ) as f:
                 lines = f.readlines()
 
-            pos_opacity = fn._get_position(lines, "opacity")
-            pos_size = fn._get_position(lines, "icon_size")
-            pos_theme = fn._get_position(lines, "theme=")
-            pos_font = fn._get_position(lines, "font_size=")
-
-            lines[pos_opacity] = "opacity=" + str(int(self.hscale.get_value())) + "\n"
-            lines[pos_size] = "icon_size=" + str(int(self.icons.get_value())) + "\n"
-            lines[pos_theme] = "theme=" + self.themes.get_active_text() + "\n"
-            lines[pos_font] = "font_size=" + str(int(self.fonts.get_value())) + "\n"
+            self._apply_save_lines(lines)
 
             with open(
                 fn.home + "/.config/archlinux-logout/archlinux-logout.conf", "w"
@@ -256,21 +276,26 @@ class TransparentWindow(Gtk.ApplicationWindow):
             ) as f:
                 lines = f.readlines()
 
-            pos_opacity = fn._get_position(lines, "opacity")
-            pos_size = fn._get_position(lines, "icon_size")
-            pos_theme = fn._get_position(lines, "theme=")
-            pos_font = fn._get_position(lines, "font_size=")
-
-            lines[pos_opacity] = "opacity=" + str(int(self.hscale.get_value())) + "\n"
-            lines[pos_size] = "icon_size=" + str(int(self.icons.get_value())) + "\n"
-            lines[pos_theme] = "theme=" + self.themes.get_active_text() + "\n"
-            lines[pos_font] = "font_size=" + str(int(self.fonts.get_value())) + "\n"
+            self._apply_save_lines(lines)
 
             with open(
                 fn.home + "/.config/archlinux-logout/archlinux-logout.conf", "w"
             ) as f:
                 f.writelines(lines)
             self.popover.popdown()
+
+    def _cancel_hover_timer(self):
+        if getattr(self, "_hover_timer_id", None):
+            GLib.source_remove(self._hover_timer_id)
+            self._hover_timer_id = None
+
+    def _start_hover_timer(self, lbl):
+        self._cancel_hover_timer()
+        def show_label():
+            lbl.set_visible(True)
+            self._hover_timer_id = None
+            return False
+        self._hover_timer_id = GLib.timeout_add(2000, show_label)
 
     def on_mouse_in(self, widget, data):
         widget.set_cursor(Gdk.Cursor.new_from_name("pointer"))
@@ -287,6 +312,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl1.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Shutdown ({data})</span>'
             )
+            self._start_hover_timer(self.lbl1)
         elif data == self.binds.get("restart"):
             pr = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -299,6 +325,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl2.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Reboot ({data})</span>'
             )
+            self._start_hover_timer(self.lbl2)
         elif data == self.binds.get("suspend"):
             ps = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -311,6 +338,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl3.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Suspend ({data})</span>'
             )
+            self._start_hover_timer(self.lbl3)
         elif data == self.binds.get("lock"):
             plk = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -323,6 +351,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl4.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Lock ({data})</span>'
             )
+            self._start_hover_timer(self.lbl4)
         elif data == self.binds.get("logout"):
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -335,6 +364,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl5.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Logout ({data})</span>'
             )
+            self._start_hover_timer(self.lbl5)
         elif data == self.binds.get("cancel"):
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -347,6 +377,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl6.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Cancel ({data})</span>'
             )
+            self._start_hover_timer(self.lbl6)
         elif data == self.binds.get("hibernate"):
             plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(
@@ -359,6 +390,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.lbl7.set_markup(
                 f'<span size="{str(self.font)}000" foreground="{self.hover}">Hibernate ({data})</span>'
             )
+            self._start_hover_timer(self.lbl7)
         elif data == self.binds.get("settings"):
             pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
                 fn.os.path.join(fn.working_dir, "configure_blur.svg"),
@@ -376,6 +408,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
     def on_mouse_out(self, widget, data):
         widget.set_cursor(None)
+        self._cancel_hover_timer()
 
         if not self.active:
             if data == self.binds.get("shutdown"):
@@ -390,6 +423,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl1.set_markup(
                     f'<span size="{str(self.font)}000">Shutdown ({data})</span>'
                 )
+                self.lbl1.set_visible(self.show_text)
             elif data == self.binds.get("restart"):
                 pr = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -402,6 +436,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl2.set_markup(
                     f'<span size="{str(self.font)}000">Reboot ({data})</span>'
                 )
+                self.lbl2.set_visible(self.show_text)
             elif data == self.binds.get("suspend"):
                 ps = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -414,6 +449,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl3.set_markup(
                     f'<span size="{str(self.font)}000">Suspend ({data})</span>'
                 )
+                self.lbl3.set_visible(self.show_text)
             elif data == self.binds.get("lock"):
                 plk = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -426,6 +462,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl4.set_markup(
                     f'<span size="{str(self.font)}000">Lock ({data})</span>'
                 )
+                self.lbl4.set_visible(self.show_text)
             elif data == self.binds.get("logout"):
                 plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -438,6 +475,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl5.set_markup(
                     f'<span size="{str(self.font)}000">Logout ({data})</span>'
                 )
+                self.lbl5.set_visible(self.show_text)
             elif data == self.binds.get("cancel"):
                 plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -450,6 +488,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl6.set_markup(
                     f'<span size="{str(self.font)}000">Cancel ({data})</span>'
                 )
+                self.lbl6.set_visible(self.show_text)
             elif data == self.binds.get("hibernate"):
                 plo = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(
@@ -462,6 +501,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 self.lbl7.set_markup(
                     f'<span size="{str(self.font)}000">Hibernate ({data})</span>'
                 )
+                self.lbl7.set_visible(self.show_text)
             elif data == self.binds.get("settings"):
                 pset = GdkPixbuf.Pixbuf().new_from_file_at_size(
                     fn.os.path.join(fn.working_dir, "configure.svg"),
