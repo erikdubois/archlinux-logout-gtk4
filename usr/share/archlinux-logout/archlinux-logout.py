@@ -122,10 +122,9 @@ class TransparentWindow(Gtk.ApplicationWindow):
         return False
 
     def _load_pixbufs_async(self):
-        for svg_path, widget, size in self._pending_pixbufs:
+        for svg_path, widget, _ in self._pending_pixbufs:
             try:
-                pb = GdkPixbuf.Pixbuf().new_from_file_at_size(svg_path, size, size)
-                texture = Gdk.Texture.new_for_pixbuf(pb)
+                texture = Gdk.Texture.new_from_filename(svg_path)
                 GLib.idle_add(widget.set_paintable, texture)
             except Exception as e:
                 print(f"[WARN]: Could not load {svg_path}: {e}")
@@ -196,8 +195,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
                         if monitor:
                             geometry = monitor.get_geometry()
                             print(
-                                f"[DEBUG]: Monitor: Primary={monitor.is_primary()}, "
-                                f"Dimension={geometry.width}x{geometry.height}"
+                                f"[DEBUG]: Monitor: Dimension={geometry.width}x{geometry.height}"
                             )
                             self.set_size_request(geometry.width, geometry.height)
                             self.fullscreen_on_monitor(monitor)
@@ -238,7 +236,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
         lines[pos_opacity] = "opacity=" + str(int(self.hscale.get_value())) + "\n"
         lines[pos_size] = "icon_size=" + str(int(self.icons.get_value())) + "\n"
-        lines[pos_theme] = "theme=" + self.themes.get_active_text() + "\n"
+        lines[pos_theme] = "theme=" + self.themes.get_selected_item().get_string() + "\n"
         lines[pos_font] = "font_size=" + str(int(self.fonts.get_value())) + "\n"
         lines[pos_show_text] = "show_text=" + str(self.chk_show_text.get_active()) + "\n"
 

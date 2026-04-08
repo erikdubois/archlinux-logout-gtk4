@@ -289,15 +289,11 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     self.icons.set_size_request(150, 0)
     self.icons.set_valign(Gtk.Align.START)
 
-    self.themes = Gtk.ComboBoxText()
-
     lists = fn._get_themes()
-    active = 0
-    for x in range(len(lists)):
-        self.themes.append_text(lists[x])
-        if lists[x] == self.theme:
-            active = x
-    self.themes.set_active(active)
+    theme_model = Gtk.StringList.new(lists)
+    self.themes = Gtk.DropDown(model=theme_model)
+    active = lists.index(self.theme) if self.theme in lists else 0
+    self.themes.set_selected(active)
 
     btn_save_settings = Gtk.Button(label="Save Settings")
     btn_save_settings.connect("clicked", self.on_save_clicked)

@@ -33,8 +33,15 @@ def _get_position(lists, value):
 
 
 def set_widget_pixbuf(widget, pixbuf):
-    from gi.repository import Gdk
-    texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+    from gi.repository import Gdk, GLib
+    fmt = Gdk.MemoryFormat.R8G8B8A8 if pixbuf.get_has_alpha() else Gdk.MemoryFormat.R8G8B8
+    texture = Gdk.MemoryTexture.new(
+        pixbuf.get_width(),
+        pixbuf.get_height(),
+        fmt,
+        GLib.Bytes.new(pixbuf.get_pixels()),
+        pixbuf.get_rowstride(),
+    )
     widget.set_paintable(texture)
 
 
