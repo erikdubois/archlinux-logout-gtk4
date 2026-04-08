@@ -290,6 +290,10 @@ def _get_logout():
         return "pkill sway"
     elif desktop in ("hyprland", "/usr/share/wayland-sessions/hyprland"):
         return "hyprctl dispatch exit"
+    elif desktop in ("Hyprland", "/usr/share/wayland-sessions/hyprland"):
+        return "hyprctl dispatch exit"
+    elif desktop in ("Hyprland", "/usr/share/wayland-sessions/hyprland-uwsm"):
+        return "hyprctl dispatch exit"
     elif desktop in ("river", "/usr/share/wayland-sessions/river"):
         return "pkill river"
     elif desktop in ("wayfire", "/usr/share/wayland-sessions/wayfire"):
