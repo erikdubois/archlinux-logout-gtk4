@@ -15,7 +15,7 @@ from distro import id
 gi.require_version("Gtk", "4.0")
 gi.require_version("GdkPixbuf", "2.0")
 
-from gi.repository import Gtk, GdkPixbuf, Gdk, GLib  # noqa
+from gi.repository import Gtk, GdkPixbuf, Gdk, GLib, Gio  # noqa
 
 
 class TransparentWindow(Gtk.ApplicationWindow):
@@ -633,7 +633,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
 class ArchLinuxLogoutApp(Gtk.Application):
     def __init__(self):
-        super().__init__(application_id="org.archlinux.logout")
+        super().__init__(application_id="org.archlinux.logout", flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_activate(self):
         TransparentWindow(self)
