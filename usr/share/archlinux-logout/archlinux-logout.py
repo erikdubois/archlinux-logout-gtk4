@@ -122,9 +122,14 @@ class TransparentWindow(Gtk.ApplicationWindow):
         return False
 
     def _load_pixbufs_async(self):
-        for svg_path, widget, _ in self._pending_pixbufs:
+        for svg_path, widget, size in self._pending_pixbufs:
             try:
-                texture = Gdk.Texture.new_from_filename(svg_path)
+                pb = GdkPixbuf.Pixbuf.new_from_file_at_size(svg_path, size, size)
+                fmt = Gdk.MemoryFormat.R8G8B8A8 if pb.get_has_alpha() else Gdk.MemoryFormat.R8G8B8
+                texture = Gdk.MemoryTexture.new(
+                    pb.get_width(), pb.get_height(), fmt,
+                    GLib.Bytes.new(pb.get_pixels()), pb.get_rowstride(),
+                )
                 GLib.idle_add(widget.set_paintable, texture)
             except Exception as e:
                 print(f"[WARN]: Could not load {svg_path}: {e}")
