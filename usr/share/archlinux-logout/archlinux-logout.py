@@ -62,8 +62,8 @@ class TransparentWindow(Gtk.ApplicationWindow):
     buttons = None
     active = False
     opacity = 0.8
-    main_icon_size = 96
-    aux_icon_size = 48
+    main_icon_size = 192
+    aux_icon_size = 96
 
     def __init__(self, app):
         super().__init__(application=app, title="ArchLinux Logout")
@@ -100,7 +100,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.buttons = self.d_buttons
 
         self.main_icon_size = self.icon
-        self.aux_icon_size = max(32, self.icon // 2)
+        self.aux_icon_size = max(64, self.icon // 2)
 
         self._apply_background_css()
         self.display_on_monitor()
@@ -163,10 +163,10 @@ class TransparentWindow(Gtk.ApplicationWindow):
 
     def _set_scaled_icon_sizes(self, geometry):
         monitor_min = min(geometry.width, geometry.height)
-        scaled_main = int(round(monitor_min * 0.044))
-        scaled_aux = int(round(monitor_min * 0.03))
-        self.main_icon_size = max(48, min(160, scaled_main))
-        self.aux_icon_size = max(32, min(72, scaled_aux))
+        scaled_main = int(round(monitor_min * 0.088))
+        scaled_aux = int(round(monitor_min * 0.06))
+        self.main_icon_size = max(96, min(320, scaled_main))
+        self.aux_icon_size = max(64, min(144, scaled_aux))
 
     def display_on_monitor(self):
         print("#### Archlinux Logout ####")
