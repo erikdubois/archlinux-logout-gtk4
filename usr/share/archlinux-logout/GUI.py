@@ -261,6 +261,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
 
     self.hscale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=ad1)
     self.hscale.set_digits(0)
+    self.hscale.set_draw_value(True)
+    self.hscale.set_value_pos(Gtk.PositionType.TOP)
     self.hscale.set_hexpand(True)
     self.hscale.set_size_request(150, 0)
     self.hscale.set_valign(Gtk.Align.START)
@@ -273,6 +275,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
 
     self.fonts = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=ad1f)
     self.fonts.set_digits(0)
+    self.fonts.set_draw_value(True)
+    self.fonts.set_value_pos(Gtk.PositionType.TOP)
     self.fonts.set_hexpand(True)
     self.fonts.set_size_request(150, 0)
     self.fonts.set_valign(Gtk.Align.START)
@@ -285,6 +289,8 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
 
     self.icons = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=ad1i)
     self.icons.set_digits(0)
+    self.icons.set_draw_value(True)
+    self.icons.set_value_pos(Gtk.PositionType.TOP)
     self.icons.set_hexpand(True)
     self.icons.set_size_request(150, 0)
     self.icons.set_valign(Gtk.Align.START)
