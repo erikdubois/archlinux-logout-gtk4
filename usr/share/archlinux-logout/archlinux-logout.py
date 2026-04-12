@@ -100,7 +100,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.buttons = self.d_buttons
 
         self.main_icon_size = self.icon
-        self.aux_icon_size = max(64, self.icon // 2)
+        self.aux_icon_size = max(120, self.icon // 2)
 
         self._apply_background_css()
         self.display_on_monitor()
@@ -165,8 +165,8 @@ class TransparentWindow(Gtk.ApplicationWindow):
         monitor_min = min(geometry.width, geometry.height)
         scaled_main = int(round(monitor_min * 0.088))
         scaled_aux = int(round(monitor_min * 0.06))
-        self.main_icon_size = max(96, min(320, scaled_main))
-        self.aux_icon_size = max(64, min(144, scaled_aux))
+        self.main_icon_size = max(120, min(320, scaled_main))
+        self.aux_icon_size = max(120, min(144, scaled_aux))
 
     def display_on_monitor(self):
         print("#### Archlinux Logout ####")
