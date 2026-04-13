@@ -328,12 +328,38 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     hbox_show_text.append(lbl_show_text)
     hbox_show_text.append(self.chk_show_text)
 
+    # --- Button visibility checkboxes ---
+    lbl_buttons_section = Gtk.Label()
+    lbl_buttons_section.set_markup("<b>Buttons:</b>")
+    lbl_buttons_section.set_halign(Gtk.Align.START)
+    lbl_buttons_section.set_valign(Gtk.Align.CENTER)
+
+    _all_buttons = ["cancel", "shutdown", "restart", "suspend", "hibernate", "lock", "logout"]
+    _btn_display = {
+        "cancel": "Cancel", "shutdown": "Shutdown", "restart": "Restart",
+        "suspend": "Suspend", "hibernate": "Hibernate", "lock": "Lock", "logout": "Logout",
+    }
+
+    buttons_grid = Gtk.Grid()
+    buttons_grid.set_column_spacing(16)
+    buttons_grid.set_row_spacing(4)
+
+    for i, btn_name in enumerate(_all_buttons):
+        chk = Gtk.CheckButton(label=_btn_display[btn_name])
+        chk.set_active(btn_name in self.buttons)
+        setattr(self, f"chk_btn_{btn_name}", chk)
+        buttons_grid.attach(chk, i % 2, i // 2, 1, 1)
+
+    vbox_buttons_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    vbox_buttons_section.append(lbl_buttons_section)
+    vbox_buttons_section.append(buttons_grid)
+
     hbox_theme = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
     hbox_theme.append(lbl_theme)
     hbox_theme.append(self.themes)
 
-    hbox_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-    hbox_buttons.append(btn_save_settings)
+    hbox_save = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+    hbox_save.append(btn_save_settings)
 
     grid_settings = Gtk.Grid()
     grid_settings.set_row_spacing(20)
@@ -342,8 +368,9 @@ def GUI(self, Gtk, GdkPixbuf, working_dir, os, Gdk, fn):
     grid_settings.attach(hbox_icon_size, 0, 2, 1, 1)
     grid_settings.attach(hbox_font_size, 0, 3, 1, 1)
     grid_settings.attach(hbox_show_text, 0, 4, 1, 1)
-    grid_settings.attach(hbox_theme, 0, 5, 1, 1)
-    grid_settings.attach(hbox_buttons, 0, 6, 1, 1)
+    grid_settings.attach(vbox_buttons_section, 0, 5, 1, 1)
+    grid_settings.attach(hbox_theme, 0, 6, 1, 1)
+    grid_settings.attach(hbox_save, 0, 7, 1, 1)
 
     vbox.append(grid_settings)
 

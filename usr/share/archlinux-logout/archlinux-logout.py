@@ -56,14 +56,14 @@ class TransparentWindow(Gtk.ApplicationWindow):
     }
     theme = "handy"
     hover = "#ffffff"
-    icon = 96
+    icon = 80
     font = 11
     show_text = False
     buttons = None
     active = False
     opacity = 0.8
-    main_icon_size = 192
-    aux_icon_size = 96
+    main_icon_size = 80
+    aux_icon_size = 32
 
     def __init__(self, app):
         super().__init__(application=app, title="ArchLinux Logout")
@@ -100,7 +100,7 @@ class TransparentWindow(Gtk.ApplicationWindow):
             self.buttons = self.d_buttons
 
         self.main_icon_size = self.icon
-        self.aux_icon_size = max(120, self.icon // 2)
+        self.aux_icon_size = 32
 
         self._apply_background_css()
         self.display_on_monitor()
@@ -160,13 +160,6 @@ class TransparentWindow(Gtk.ApplicationWindow):
                 pass
             except Exception:
                 pass
-
-    def _set_scaled_icon_sizes(self, geometry):
-        monitor_min = min(geometry.width, geometry.height)
-        scaled_main = int(round(monitor_min * 0.088))
-        scaled_aux = int(round(monitor_min * 0.06))
-        self.main_icon_size = max(120, min(320, scaled_main))
-        self.aux_icon_size = max(120, min(144, scaled_aux))
 
     def display_on_monitor(self):
         print("#### Archlinux Logout ####")
@@ -250,6 +243,15 @@ class TransparentWindow(Gtk.ApplicationWindow):
             lbl = getattr(self, attr, None)
             if lbl:
                 lbl.set_visible(self.show_text)
+
+        # Save button visibility selection
+        _all_buttons = ["cancel", "shutdown", "restart", "suspend", "hibernate", "lock", "logout"]
+        selected = [b for b in _all_buttons if getattr(self, f"chk_btn_{b}", None) and getattr(self, f"chk_btn_{b}").get_active()]
+        new_buttons_line = "buttons=" + ",".join(selected) + "\n"
+        for idx, line in enumerate(lines):
+            if line.strip().startswith("buttons="):
+                lines[idx] = new_buttons_line
+                break
 
     def on_save_clicked(self, widget):
         try:
