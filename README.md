@@ -2,6 +2,22 @@
 
 A modern, customizable logout/power management widget for ArchLinux and other Linux distributions. Built with GTK4, this application provides a transparent, fullscreen overlay for quick access to power management features with an elegant, theme-aware interface.
 
+# Installation
+
+Add the nemesis_repo to your /etc/pacman.conf and update your system.
+
+```
+[nemesis_repo]
+SigLevel = Never
+Server = https://erikdubois.github.io/$repo/$arch
+```
+
+Then install 
+
+```
+sudo pacman -S archlinux-logout-gtk4-git.
+```
+
 ## Overview
 
 ArchLinux Logout is a power management utility designed for desktop environments and window managers that need a unified way to access logout, shutdown, reboot, suspend, hibernate, and lock functionality. The application displays a beautiful, semi-transparent window with large, easy-to-click icons and optional labels for each action.
